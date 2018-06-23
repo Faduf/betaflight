@@ -53,7 +53,7 @@ typedef enum {
     BOXBEEPERON,
     BOXLEDMAX,
     BOXLEDLOW,
-    BOXLLIGHTS,
+    BOXLEDCOLORS,
     BOXCALIB,
     BOXGOV,
     BOXOSD,

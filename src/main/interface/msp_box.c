@@ -63,7 +63,7 @@ static const box_t boxes[CHECKBOX_ITEM_COUNT] = {
     { BOXBEEPERON, "BEEPER", 13 },
     { BOXLEDMAX, "LEDMAX", 14 },
     { BOXLEDLOW, "LEDLOW", 15 },
-    { BOXLLIGHTS, "LLIGHTS", 16 },
+    { BOXLEDCOLORS, "LED COLOR CHANGE", 16 },
     { BOXCALIB, "CALIB", 17 },
     { BOXGOV, "GOVERNOR", 18 },
     { BOXOSD, "OSD DISABLE SW", 19 },
@@ -219,6 +219,7 @@ void initActiveBoxIds(void)
 #ifdef USE_LED_STRIP
     if (feature(FEATURE_LED_STRIP)) {
         BME(BOXLEDLOW);
+        BME(BOXLEDCOLORS);
     }
 #endif
 

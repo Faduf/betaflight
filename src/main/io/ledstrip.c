@@ -181,6 +181,7 @@ void pgResetFn_ledStripConfig(ledStripConfig_t *ledStripConfig)
 
 static int scaledThrottle;
 static int auxInput;
+static uint8_t colorSwitchIndex;
 
 static void updateLedRingCounts(void);
 
@@ -443,6 +444,28 @@ static const struct {
 
 static void applyLedFixedLayers(void)
 {
+    static uint8_t newColorSet = 0;
+    ledConfig_t *ledConfigTemp;
+
+    if (!IS_RC_MODE_ACTIVE(BOXLEDCOLORS)) {
+        newColorSet = 0;
+    }
+    if (IS_RC_MODE_ACTIVE(BOXLEDCOLORS) && !newColorSet) {
+        colorSwitchIndex ++;
+        if (colorSwitchIndex > ARRAYLEN(hsv)) {
+            colorSwitchIndex = 1;
+        }
+        for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
+            ledConfigTemp = &ledStripConfigMutable()->ledConfigs[ledIndex];
+            *ledConfigTemp &= 0xFF00FFFF;
+            *ledConfigTemp += ((colorSwitchIndex*4)<<16);
+        }
+        newColorSet = 1;
+        reevaluateLedConfig();
+        writeEEPROM();
+        readEEPROM();
+    }
+
     for (int ledIndex = 0; ledIndex < ledCounts.count; ledIndex++) {
         const ledConfig_t *ledConfig = &ledStripConfig()->ledConfigs[ledIndex];
         hsvColor_t color = *getSC(LED_SCOLOR_BACKGROUND);
@@ -1191,6 +1214,9 @@ bool setModeColor(ledModeIndex_e modeIndex, int modeColorIndex, int colorIndex)
 
 void ledStripInit(void)
 {
+    const ledConfig_t *ledConfigInit = &ledStripConfig()->ledConfigs[0];
+    colorSwitchIndex = ledGetColor(ledConfigInit);
+
     colors = ledStripConfigMutable()->colors;
     modeColors = ledStripConfig()->modeColors;
     specialColors = ledStripConfig()->specialColors;
