@@ -60,8 +60,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_1,
         .reg = I2C1,
-        .sclPins = { I2CPINDEF(PB8) },
-        .sdaPins = { I2CPINDEF(PB9) },
+        .sclPins = { I2CPINDEF(PB6), I2CPINDEF(PB8) },
+        .sdaPins = { I2CPINDEF(PB7), I2CPINDEF(PB9) },
         .rcc = RCC_APB1(I2C1),
         .ev_irq = I2C1_EV_IRQn,
         .er_irq = I2C1_ER_IRQn,
@@ -227,6 +227,7 @@ void i2cInit(I2CDevice device)
     i2cDevice_t *pDev = &i2cDevice[device];
 
     const i2cHardware_t *hardware = pDev->hardware;
+
     if (!hardware) {
         return;
     }

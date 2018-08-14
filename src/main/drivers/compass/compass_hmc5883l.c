@@ -254,6 +254,7 @@ bool hmc5883lDetect(magDev_t* mag)
         busdev->busdev_u.i2c.address = HMC5883_MAG_I2C_ADDRESS;
     }
 #endif
+
     bool ack = busReadRegisterBuffer(&mag->busdev, HMC58X3_REG_IDA, &sig, 1);
 
     if (!ack || sig != HMC5883_DEVICE_ID) {
