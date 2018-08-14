@@ -152,6 +152,10 @@
 #include "flight/pid.h"
 #include "flight/servos.h"
 
+#ifdef USE_VOLUME_LIMITATION
+#include "flight/volume_limitation.h"
+#endif
+
 #include "io/rcdevice_cam.h"
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -604,6 +608,10 @@ void init(void)
     if (feature(FEATURE_GPS)) {
         gpsInit();
     }
+#endif
+
+#ifdef USE_VOLUME_LIMITATION
+    volLimitation_init();
 #endif
 
 #ifdef USE_LED_STRIP

@@ -267,7 +267,6 @@ bool compassInit(void)
     if (!compassDetect(&magDev)) {
         return false;
     }
-
     const int16_t deg = compassConfig()->mag_declination / 100;
     const int16_t min = compassConfig()->mag_declination % 100;
     mag.magneticDeclination = (deg + ((float)min * (1.0f / 60.0f))) * 10; // heading is in 0.1deg units

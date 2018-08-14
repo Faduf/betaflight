@@ -88,7 +88,7 @@
 #include "flight/pid.h"
 #include "flight/servos.h"
 #include "flight/gps_rescue.h"
-
+#include "flight/volume_limitation.h"
 
 // June 2013     V2.2-dev
 
@@ -752,6 +752,17 @@ bool processRx(timeUs_t currentTimeUs)
     } else {
         DISABLE_FLIGHT_MODE(HORIZON_MODE);
     }
+
+#ifdef USE_VOLUME_LIMITATION
+    if (volLimitation_DistanceLim() && sensors(SENSOR_ACC)) {
+        // bumpless transfer to Level mode
+        canUseHorizonMode = false;
+
+        if (!FLIGHT_MODE(ANGLE_MODE)) {
+            ENABLE_FLIGHT_MODE(ANGLE_MODE);
+        }
+    }
+#endif
 
 #ifdef USE_GPS_RESCUE
     if (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE)) {

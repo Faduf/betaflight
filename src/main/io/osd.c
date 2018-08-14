@@ -72,6 +72,9 @@
 #ifdef USE_ESC_SENSOR
 #include "flight/mixer.h"
 #endif
+#ifdef USE_VOLUME_LIMITATION
+#include "flight/volume_limitation.h"
+#endif
 #include "flight/pid.h"
 
 #include "io/asyncfatfs/asyncfatfs.h"
@@ -733,6 +736,17 @@ static bool osdDrawSingleElement(uint8_t item)
             STATIC_ASSERT(OSD_FORMAT_MESSAGE_BUFFER_SIZE <= sizeof(buff), osd_warnings_size_exceeds_buffer_size);
 
             const batteryState_e batteryState = getBatteryState();
+
+#ifdef USE_VOLUME_LIMITATION
+            // Volume limitation warnings
+            if (getVolLimStatus().altitude == 1) {
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "TOO HIGH");
+                break;
+            } else if(getVolLimStatus().distance == 1) {
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "TOO FAR");
+                break;
+            }
+#endif
 
 #ifdef USE_DSHOT
             if (isTryingToArm() && !ARMING_FLAG(ARMED)) {

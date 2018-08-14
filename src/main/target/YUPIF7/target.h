@@ -99,10 +99,10 @@
 // *************** Baro ****************************
 #define USE_I2C
 #define USE_I2C_DEVICE_1
+#define I2C_DEVICE              (I2CDEV_1)
 #define USE_I2C_PULLUP
 #define I2C1_SCL                PB8
 #define I2C1_SDA                PB9
-#define I2C_DEVICE              (I2CDEV_1)
 
 #define BARO_I2C_INSTANCE       (I2CDEV_1)
 #define USE_BARO
@@ -136,6 +136,7 @@
 #define SERIALRX_PROVIDER       SERIALRX_SBUS
 #define SERIALRX_UART           SERIAL_PORT_USART6
 #define DEFAULT_FEATURES        (FEATURE_OSD)
+#define USE_VOLUME_LIMITATION
 
 #define USE_ESCSERIAL
 #define USE_SERIAL_4WAY_BLHELI_INTERFACE

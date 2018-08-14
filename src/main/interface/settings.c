@@ -53,6 +53,10 @@
 #include "flight/position.h"
 #include "flight/servos.h"
 
+#ifdef USE_VOLUME_LIMITATION
+#include "flight/volume_limitation.h"
+#endif
+
 #include "interface/settings.h"
 
 #include "io/beeper.h"
@@ -768,6 +772,23 @@ const clivalue_t valueTable[] = {
     { "gps_rescue_throttle_hover",  VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000, 2000 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, throttleHover) },
     { "gps_rescue_sanity_checks",   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_GPS_RESCUE }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, sanityChecks) },
     { "gps_rescue_min_sats",        VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 50 }, PG_GPS_RESCUE, offsetof(gpsRescueConfig_t, minSats) },
+#endif
+#ifdef USE_VOLUME_LIMITATION
+    // PG_VOLUME_LIMITATION
+    { "vol_limitation_max_altitude",    VAR_UINT16 | MASTER_VALUE, .config.minmax = { 5, 100 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, maxAltitude) },
+    { "vol_limitation_max_dist",        VAR_UINT16 | MASTER_VALUE, .config.minmax = { 10, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, maxDistance) },
+    { "vol_limitation_throttle_p",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, throttleP) },
+    { "vol_limitation_throttle_i",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, throttleI) },
+    { "vol_limitation_throttle_d",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, throttleD) },
+    { "vol_limitation_velocity_p",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, velP) },
+    { "vol_limitation_velocity_i",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, velI) },
+    { "vol_limitation_velocity_d",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, velD) },
+    { "vol_limitation_yaw_p",           VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, yawP) },
+
+    { "vol_limitation_throttle_min",    VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000, 2000 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, throttleMin) },
+    { "vol_limitation_throttle_max",    VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000, 2000 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, throttleMax) },
+    { "vol_limitation_throttle_hover",  VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000, 2000 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, throttleHover) },
+    { "vol_limitation_min_sats",        VAR_UINT8  | MASTER_VALUE, .config.minmax = { 0, 50 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, minSats) },
 #endif
 #endif
 

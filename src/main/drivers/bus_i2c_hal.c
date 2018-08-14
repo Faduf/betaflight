@@ -35,7 +35,7 @@
 #include "drivers/bus_i2c.h"
 #include "drivers/bus_i2c_impl.h"
 
-#define CLOCKSPEED 800000    // i2c clockspeed 400kHz default (conform specs), 800kHz  and  1200kHz (Betaflight default)
+#define CLOCKSPEED 400000    // i2c clockspeed 400kHz default (conform specs), 800kHz  and  1200kHz (Betaflight default)
 
 // Number of bits in I2C protocol phase
 #define LEN_ADDR 7
@@ -60,8 +60,8 @@ const i2cHardware_t i2cHardware[I2CDEV_COUNT] = {
     {
         .device = I2CDEV_1,
         .reg = I2C1,
-        .sclPins = { I2CPINDEF(PB6), I2CPINDEF(PB8) },
-        .sdaPins = { I2CPINDEF(PB7), I2CPINDEF(PB9) },
+        .sclPins = { I2CPINDEF(PB8) },
+        .sdaPins = { I2CPINDEF(PB9) },
         .rcc = RCC_APB1(I2C1),
         .ev_irq = I2C1_EV_IRQn,
         .er_irq = I2C1_ER_IRQn,
@@ -227,7 +227,6 @@ void i2cInit(I2CDevice device)
     i2cDevice_t *pDev = &i2cDevice[device];
 
     const i2cHardware_t *hardware = pDev->hardware;
-
     if (!hardware) {
         return;
     }

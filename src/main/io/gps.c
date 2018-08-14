@@ -53,6 +53,7 @@
 #include "flight/imu.h"
 #include "flight/pid.h"
 #include "flight/gps_rescue.h"
+#include "flight/volume_limitation.h"
 
 #include "sensors/sensors.h"
 
@@ -533,6 +534,10 @@ void gpsUpdate(timeUs_t currentTimeUs)
     if (gpsRescueIsConfigured()) {
         updateGPSRescueState();
     }
+#endif
+
+#ifdef USE_VOLUME_LIMITATION
+    volLimitation_SensorUpdate();
 #endif
 }
 
@@ -1368,6 +1373,10 @@ void onGpsNewData(void)
 
 #ifdef USE_GPS_RESCUE
     rescueNewGpsData();
+#endif
+
+#ifdef USE_VOLUME_LIMITATION
+    volLimitation_NewGpsData();
 #endif
 }
 
