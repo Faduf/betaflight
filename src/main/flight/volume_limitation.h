@@ -28,13 +28,15 @@ typedef enum {
 
 typedef struct volLimitation_s {
     uint16_t maxAltitude; //meters
+    uint16_t altitudeAlert; //meters
     uint16_t maxDistance; //meters
+    uint16_t distanceAngleSwitch; //meters
+    uint16_t distanceAlert; //meters
     uint16_t throttleP, throttleI, throttleD;
-    uint16_t yawP;
     uint16_t throttleMin;
     uint16_t throttleMax;
     uint16_t throttleHover;
-    uint16_t velP, velI, velD;
+    uint16_t distLimP, distLimD;
     uint8_t minSats;
 } volLimitationConfig_t;
 
@@ -52,11 +54,13 @@ typedef struct {
 typedef struct {
     uint8_t altitude;
     uint8_t distance;
-} volLimState_s;
+} volLimAlert_s;
 
 typedef struct {
-    volLimState_s state;
+    volLimAlert_s alert;
+    volLimAlert_s limit;
     volLimSensorData_s sensor;
+    uint8_t angleDemanded;
 } volLimData_s;
 
 void volLimitation_init(void);
@@ -64,4 +68,4 @@ void volLimitation_NewGpsData(void);
 void volLimitation_SensorUpdate(void);
 float volLimitation_AltitudeLim(void);
 uint8_t volLimitation_DistanceLim(void);
-volLimState_s getVolLimStatus(void);
+volLimAlert_s getVolLimAlert(void);

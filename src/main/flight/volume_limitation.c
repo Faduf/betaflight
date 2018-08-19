@@ -55,14 +55,15 @@ PG_REGISTER_WITH_RESET_TEMPLATE(volLimitationConfig_t, volLimitationConfig, PG_V
 
 PG_RESET_TEMPLATE(volLimitationConfig_t, volLimitationConfig,
     .maxAltitude = 50,
+    .altitudeAlert = 40,
     .maxDistance = 200,
+    .distanceAngleSwitch = 180,
+    .distanceAlert = 150,
     .throttleP = 150,
     .throttleI = 20,
     .throttleD = 50,
-    .velP = 80,
-    .velI = 20,
-    .velD = 15,
-    .yawP = 40,
+    .distLimP = 10,
+    .distLimD = 5,
     .throttleMin = 1000,
     .throttleMax = 2000,
     .throttleHover = 1400,
@@ -88,8 +89,8 @@ void volLimitation_NewGpsData(void)
 
 void volLimitation_init(void)
 {
-    volLimData.state.altitude = 0;
-    volLimData.state.distance = 0;
+    volLimData.alert.altitude = 0;
+    volLimData.alert.distance = 0;
 }
 
 void volLimitation_SensorUpdate(void)
@@ -126,24 +127,35 @@ float volLimitation_AltitudeLim(void)
     const int16_t altitudeError = volLimitationConfig()->maxAltitude - (getEstimatedAltitude() / 100); // Error in meters
     const int16_t altitudeDerivative = altitudeError - previousAltitudeError;
 
+    // OSD alert if too High
+    if ((getEstimatedAltitude() / 100) > volLimitationConfig()->altitudeAlert) {
+        volLimData.alert.altitude = 1;
+    } else {
+        volLimData.alert.altitude = 0;
+    }
+
+    if ((getEstimatedAltitude() / 100) > volLimitationConfig()->maxAltitude) {
+        volLimData.limit.altitude = 1;
+    } else {
+        volLimData.limit.altitude = 0;
+    }
+
     // Only allow integral windup within +-15m absolute altitude error
     if (ABS(altitudeError) < 15) {
         altitudeIntegral = constrain(altitudeIntegral + altitudeError, -250, 250);
-        volLimData.state.altitude = 1;
     } else {
         altitudeIntegral = 0;
-        volLimData.state.altitude = 0;
     }
 
     previousAltitudeError = altitudeError;
 
-    int16_t altitudeAdjustment = (volLimitationConfig()->throttleP * altitudeError + (volLimitationConfig()->throttleI * altitudeIntegral) / 10 *  + volLimitationConfig()->throttleD * altitudeDerivative) / ct;
+    int16_t altitudeAdjustment = (volLimitationConfig()->throttleP * altitudeError + (volLimitationConfig()->throttleI * altitudeIntegral) / 10 *  + volLimitationConfig()->throttleD * altitudeDerivative) / ct / 20;
     int16_t hoverAdjustment = (volLimitationConfig()->throttleHover - 1000) / ct;
 
-    volLimThrottle = constrain(1000 + altitudeAdjustment + hoverAdjustment, volLimitationConfig()->throttleMin, volLimitationConfig()->throttleMax);
+    volLimThrottle = constrainf(1000 + altitudeAdjustment + hoverAdjustment, volLimitationConfig()->throttleMin, volLimitationConfig()->throttleMax);
     float commandedLimThrottle = scaleRangef(volLimThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
 
-    DEBUG_SET(DEBUG_VOL_LIMITATION, 1, volLimitationConfig()->throttleP * altitudeError);
+    DEBUG_SET(DEBUG_VOL_LIMITATION, 1, altitudeError);
     DEBUG_SET(DEBUG_VOL_LIMITATION, 2, altitudeAdjustment);
     DEBUG_SET(DEBUG_VOL_LIMITATION, 3, volLimThrottle);
 
@@ -153,33 +165,59 @@ float volLimitation_AltitudeLim(void)
 uint8_t volLimitation_DistanceLim(void)
 {
     static uint8_t isStabModeSwitched = 0;
+    static float previousDistance = 0;
+    float volLimAngleD = 0, volLimAngle = 0;
 
     // Heading
     const int16_t headingError = (GPS_directionToHome - attitude.values.yaw);
-    const int16_t distanceError = (volLimitationConfig()->maxDistance - volLimData.sensor.distanceToHome);
+    const float distanceError = (float)volLimitationConfig()->maxDistance - ((float)volLimData.sensor.distanceToHome)/100; // in meter
+
+    // OSD alert if too High
+    if (volLimData.sensor.distanceToHome > volLimitationConfig()->distanceAlert) {
+        volLimData.alert.distance = 1;
+    } else {
+        volLimData.alert.distance = 0;
+    }
 
     // Activate Stab mode if too far
-    if(distanceError < 0) {
-        volLimData.state.distance = 1;
+    if(volLimData.sensor.distanceToHome > MIN(volLimitationConfig()->maxDistance,volLimitationConfig()->distanceAngleSwitch)) {
+        volLimData.angleDemanded = 1;
         isStabModeSwitched = 0;
     } else {
         // Wait for the stab mode switch to release the stab mode
         if (isStabModeSwitched) {
-            volLimData.state.distance = 0;
+            volLimData.angleDemanded = 0;
         }
     }
-
     if(IS_RC_MODE_ACTIVE(BOXANGLE)) {
         isStabModeSwitched = 1;
     }
 
+    // Distance over limit
+    if (volLimData.sensor.distanceToHome > volLimitationConfig()->maxDistance) {
+        volLimData.limit.distance = 1;
+    } else {
+        volLimData.limit.distance = 0;
+    }
+
+    // Derivative calculation
+    previousDistance = distanceError;
+    volLimAngleD = (float)volLimitationConfig()->distLimD * (distanceError - previousDistance)/50;
+    volLimAngleD = constrainf(volLimAngleD,-5,5);
+
+    volLimAngle = distanceError * (float)volLimitationConfig()->distLimP + volLimAngleD;
+    volLimAngle = constrainf(volLimAngle,-30,30);
+
+    float volLimAngle_Pitch = volLimAngle * cos_approx(degreesToRadians(headingError));
+    float volLimAngle_Roll = volLimAngle * sin_approx(degreesToRadians(headingError));
+
     DEBUG_SET(DEBUG_VOL_LIMITATION, 0, headingError);
-    return volLimData.state.distance;
+    return volLimData.angleDemanded;
 }
 
-volLimState_s getVolLimStatus(void)
+volLimAlert_s getVolLimAlert(void)
 {
-    return volLimData.state;
+    return volLimData.alert;
 }
 
 #endif // USE_VOLUME_LIMITATION
