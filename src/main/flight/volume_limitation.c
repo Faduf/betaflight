@@ -55,15 +55,13 @@ PG_REGISTER_WITH_RESET_TEMPLATE(volLimitationConfig_t, volLimitationConfig, PG_V
 
 PG_RESET_TEMPLATE(volLimitationConfig_t, volLimitationConfig,
     .maxAltitude = 50,
-    .altitudeAlert = 40,
-    .maxDistance = 200,
+    .maxDistance = 150,
     .distanceAngleSwitch = 180,
-    .distanceAlert = 150,
-    .throttleP = 150,
-    .throttleI = 20,
-    .throttleD = 50,
+    .throttleP = 20,
+    .throttleI = 30,
+    .throttleD = 10,
     .distLimP = 10,
-    .distLimD = 5,
+    .distLimD = 10,
     .throttleMin = 1000,
     .throttleMax = 2000,
     .throttleHover = 1400,
@@ -91,6 +89,7 @@ void volLimitation_init(void)
 {
     volLimData.alert.altitude = 0;
     volLimData.alert.distance = 0;
+    volLimData.angleModeDemanded = 0;
 }
 
 void volLimitation_SensorUpdate(void)
@@ -121,98 +120,130 @@ float volLimitation_AltitudeLim(void)
 {
     static float previousAltitudeError = 0;
     static int16_t altitudeIntegral = 0;
+    int16_t throttleIterm = 0, throttleDterm = 0, throttlePterm = 0;
     float ct = cos(DECIDEGREES_TO_RADIANS(attitude.values.pitch / 10))* cos(DECIDEGREES_TO_RADIANS(attitude.values.roll / 10));
     ct = constrainf(ct,0.5f,1.0f); // Inclination coefficient limitation
 
     const int16_t altitudeError = volLimitationConfig()->maxAltitude - (getEstimatedAltitude() / 100); // Error in meters
-    const int16_t altitudeDerivative = altitudeError - previousAltitudeError;
 
-    // OSD alert if too High
-    if ((getEstimatedAltitude() / 100) > volLimitationConfig()->altitudeAlert) {
+    // OSD and limitaiton activation if too High
+    if (altitudeError < 10) {
         volLimData.alert.altitude = 1;
-    } else {
-        volLimData.alert.altitude = 0;
-    }
-
-    if ((getEstimatedAltitude() / 100) > volLimitationConfig()->maxAltitude) {
         volLimData.limit.altitude = 1;
     } else {
+        volLimData.alert.altitude = 0;
         volLimData.limit.altitude = 0;
     }
 
     // Only allow integral windup within +-15m absolute altitude error
-    if (ABS(altitudeError) < 15) {
-        altitudeIntegral = constrain(altitudeIntegral + altitudeError, -250, 250);
+    if (ABS(altitudeError) < 10) {
+        altitudeIntegral += altitudeError;
+        throttleIterm = (volLimitationConfig()->throttleI * altitudeIntegral) / 10;
+        throttleIterm = constrain(throttleIterm, -250, 250);
     } else {
         altitudeIntegral = 0;
+        throttleIterm = 0;
     }
 
+    // DTerm calculation
+    const int16_t altitudeDerivative = (altitudeError - previousAltitudeError) * 33;
+    throttleDterm = volLimitationConfig()->throttleD * altitudeDerivative * 20;
     previousAltitudeError = altitudeError;
 
-    int16_t altitudeAdjustment = (volLimitationConfig()->throttleP * altitudeError + (volLimitationConfig()->throttleI * altitudeIntegral) / 10 *  + volLimitationConfig()->throttleD * altitudeDerivative) / ct / 20;
+    // PTerm calculation
+    throttlePterm = volLimitationConfig()->throttleP * altitudeError * 10;
+
+    int16_t altitudeAdjustment = (throttlePterm + throttleIterm  + throttleDterm) / ct / 20;
     int16_t hoverAdjustment = (volLimitationConfig()->throttleHover - 1000) / ct;
 
     volLimThrottle = constrainf(1000 + altitudeAdjustment + hoverAdjustment, volLimitationConfig()->throttleMin, volLimitationConfig()->throttleMax);
-    float commandedLimThrottle = scaleRangef(volLimThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
 
-    DEBUG_SET(DEBUG_VOL_LIMITATION, 1, altitudeError);
-    DEBUG_SET(DEBUG_VOL_LIMITATION, 2, altitudeAdjustment);
-    DEBUG_SET(DEBUG_VOL_LIMITATION, 3, volLimThrottle);
+    // Limitation applies only when altitude limit is reached
+    float commandedLimThrottle;
+    if (volLimData.limit.altitude == 1) {
+        commandedLimThrottle = scaleRangef(volLimThrottle, MAX(rxConfig()->mincheck, PWM_RANGE_MIN), PWM_RANGE_MAX, 0.0f, 1.0f);
+    } else {
+        commandedLimThrottle = 2000;
+    }
+
+    DEBUG_SET(DEBUG_VOL_LIMITATION, 0, volLimThrottle);
 
     return commandedLimThrottle;
 }
 
-uint8_t volLimitation_DistanceLim(void)
+float volLimitation_DistanceLimAngle(int axis, float angle_command)
 {
     static uint8_t isStabModeSwitched = 0;
     static float previousDistance = 0;
-    float volLimAngleD = 0, volLimAngle = 0;
+    float volLimAngleD = 0, volLimAngleP, volLimAngle = 0;
+    float volLimAngle_Pitch = 0, volLimAngle_Roll = 0;
 
     // Heading
-    const int16_t headingError = (GPS_directionToHome - attitude.values.yaw);
-    const float distanceError = (float)volLimitationConfig()->maxDistance - ((float)volLimData.sensor.distanceToHome)/100; // in meter
+    int16_t headingError = (attitude.values.yaw - GPS_directionToHome);
+    float distanceError = (float)volLimitationConfig()->maxDistance - (float)volLimData.sensor.distanceToHome; // in meter
 
-    // OSD alert if too High
-    if (volLimData.sensor.distanceToHome > volLimitationConfig()->distanceAlert) {
-        volLimData.alert.distance = 1;
-    } else {
-        volLimData.alert.distance = 0;
-    }
-
-    // Activate Stab mode if too far
+    // Activate Stab mode and alert OSD if too far
     if(volLimData.sensor.distanceToHome > MIN(volLimitationConfig()->maxDistance,volLimitationConfig()->distanceAngleSwitch)) {
-        volLimData.angleDemanded = 1;
+        volLimData.angleModeDemanded = 1;
+        volLimData.alert.distance = 1;
         isStabModeSwitched = 0;
     } else {
+        volLimData.alert.distance = 0;
         // Wait for the stab mode switch to release the stab mode
         if (isStabModeSwitched) {
-            volLimData.angleDemanded = 0;
+            volLimData.angleModeDemanded = 0;
         }
     }
     if(IS_RC_MODE_ACTIVE(BOXANGLE)) {
         isStabModeSwitched = 1;
     }
 
+    // Pilot loose authority when approaching the limit
+    float pilotAuthorityFac = (distanceError + 10)/20;
+    pilotAuthorityFac = constrainf(pilotAuthorityFac,0,1);
+
     // Distance over limit
     if (volLimData.sensor.distanceToHome > volLimitationConfig()->maxDistance) {
-        volLimData.limit.distance = 1;
+        // DTerm calculation
+        previousDistance = distanceError;
+        volLimAngleD = (float)volLimitationConfig()->distLimD * (distanceError - previousDistance) * getPidFrequency()/50;
+        volLimAngleD = constrainf(volLimAngleD,-10,10);
+
+        // PTerm caclulation
+        volLimAngleP = distanceError * (float)(volLimitationConfig()->distLimP) / 100;
+
+        volLimAngle = volLimAngleP + volLimAngleD;
+        volLimAngle += angle_command * pilotAuthorityFac; // Add pilot authority
+        volLimAngle = constrainf(volLimAngle,0,30);
+
+        volLimAngle_Pitch = volLimAngle * cos_approx(degreesToRadians(headingError));
+        volLimAngle_Roll = volLimAngle * sin_approx(degreesToRadians(headingError));
     } else {
-        volLimData.limit.distance = 0;
+        volLimAngle_Pitch = angle_command * pilotAuthorityFac;
+        volLimAngle_Roll = angle_command * pilotAuthorityFac;
     }
 
-    // Derivative calculation
-    previousDistance = distanceError;
-    volLimAngleD = (float)volLimitationConfig()->distLimD * (distanceError - previousDistance)/50;
-    volLimAngleD = constrainf(volLimAngleD,-5,5);
 
-    volLimAngle = distanceError * (float)volLimitationConfig()->distLimP + volLimAngleD;
-    volLimAngle = constrainf(volLimAngle,-30,30);
 
-    float volLimAngle_Pitch = volLimAngle * cos_approx(degreesToRadians(headingError));
-    float volLimAngle_Roll = volLimAngle * sin_approx(degreesToRadians(headingError));
+    if (axis == FD_ROLL) {
+        volLimData.angleModeDemanded = volLimAngle_Roll;
+        volLimData.angleModeDemanded = angle_command; // Shunt for testing
+    } else if (axis == FD_PITCH) {
+        volLimData.angleModeDemanded = volLimAngle_Pitch;
+        volLimData.angleModeDemanded = angle_command; // Shunt for testing
+    } else {
+        volLimData.angleModeDemanded = angle_command;
+    }
 
-    DEBUG_SET(DEBUG_VOL_LIMITATION, 0, headingError);
-    return volLimData.angleDemanded;
+    DEBUG_SET(DEBUG_VOL_LIMITATION, 1, (int16_t)headingError);
+    DEBUG_SET(DEBUG_VOL_LIMITATION, 2, (int16_t)distanceError);
+    DEBUG_SET(DEBUG_VOL_LIMITATION, 3, (int16_t)volLimAngle);
+    return volLimData.angleCommand;
+}
+
+uint8_t volLimitation_DistanceLimStatus(void)
+{
+    return volLimData.angleModeDemanded;
 }
 
 volLimAlert_s getVolLimAlert(void)

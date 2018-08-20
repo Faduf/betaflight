@@ -754,7 +754,7 @@ bool processRx(timeUs_t currentTimeUs)
     }
 
 #ifdef USE_VOLUME_LIMITATION
-    if (volLimitation_DistanceLim() && sensors(SENSOR_ACC)) {
+    if (volLimitation_DistanceLimStatus() && sensors(SENSOR_ACC)) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
 
