@@ -777,15 +777,11 @@ const clivalue_t valueTable[] = {
     // PG_VOLUME_LIMITATION
     { "vol_limitation_max_altitude",    VAR_UINT16 | MASTER_VALUE, .config.minmax = { 5, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, maxAltitude) },
     { "vol_limitation_max_dist",        VAR_UINT16 | MASTER_VALUE, .config.minmax = { 5, 5000 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, maxDistance) },
-    { "vol_limitation_altitude_alert",  VAR_UINT16 | MASTER_VALUE, .config.minmax = { 5, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, altitudeAlert) },
-    { "vol_limitation_dist_angle_swt",  VAR_UINT16 | MASTER_VALUE, .config.minmax = { 5, 5000 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, distanceAngleSwitch) },
-    { "vol_limitation_distance_alert",  VAR_UINT16 | MASTER_VALUE, .config.minmax = { 5, 5000 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, distanceAlert) },
     { "vol_limitation_throttle_p",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, throttleP) },
     { "vol_limitation_throttle_i",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, throttleI) },
     { "vol_limitation_throttle_d",      VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, throttleD) },
     { "vol_limitation_distLim_p",       VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, distLimP) },
     { "vol_limitation_distLim_d",       VAR_UINT16 | MASTER_VALUE, .config.minmax = { 0, 500 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, distLimD) },
-
     { "vol_limitation_throttle_min",    VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000, 2000 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, throttleMin) },
     { "vol_limitation_throttle_max",    VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000, 2000 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, throttleMax) },
     { "vol_limitation_throttle_hover",  VAR_UINT16 | MASTER_VALUE, .config.minmax = { 1000, 2000 }, PG_VOLUME_LIMITATION, offsetof(volLimitationConfig_t, throttleHover) },

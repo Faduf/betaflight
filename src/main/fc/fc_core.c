@@ -258,6 +258,14 @@ void updateArmingStatus(void)
         }
 #endif
 
+#ifdef USE_VOLUME_LIMITATION
+         if (!volLimitationConfig()->minSats || STATE(GPS_FIX_HOME) || ARMING_FLAG(WAS_EVER_ARMED)) {
+                unsetArmingDisabled(ARMING_DISABLED_GPS);
+         } else {
+                setArmingDisabled(ARMING_DISABLED_GPS);
+         }
+#endif
+
         if (IS_RC_MODE_ACTIVE(BOXPARALYZE)) {
             setArmingDisabled(ARMING_DISABLED_PARALYZE);
         }

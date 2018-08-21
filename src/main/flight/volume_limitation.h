@@ -61,13 +61,13 @@ typedef struct {
     volLimAlert_s limit;
     volLimSensorData_s sensor;
     uint8_t angleModeDemanded;
-    float angleCommand;
+    float angleDemand;
 } volLimData_s;
 
 void volLimitation_init(void);
 void volLimitation_NewGpsData(void);
 void volLimitation_SensorUpdate(void);
-float volLimitation_AltitudeLim(void);
+float volLimitation_AltitudeLim(float throttle);
 float volLimitation_DistanceLimAngle(int axis, float angle_command);
 uint8_t volLimitation_DistanceLimStatus(void);
 volLimAlert_s getVolLimAlert(void);

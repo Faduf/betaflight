@@ -49,6 +49,7 @@
 #include "flight/imu.h"
 #include "flight/gps_rescue.h"
 #include "flight/mixer.h"
+#include "flight/volume_limitation.h"
 
 #include "io/gps.h"
 

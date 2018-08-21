@@ -828,7 +828,7 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
 #endif
 
 #if defined(USE_VOLUME_LIMITATION) && defined(USE_GPS)
-    throttle = constrainf(throttle,0.0f,volLimitation_AltitudeLim());
+    throttle = volLimitation_AltitudeLim(throttle);;
 #endif
 
     motorMixRange = motorMixMax - motorMixMin;
