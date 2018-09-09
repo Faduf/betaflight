@@ -138,7 +138,7 @@ float volLimitation_AltitudeLim(float throttle)
     // Only allow integral windup within +-10m absolute altitude error
     if ((ABS(altitudeError) < 10) && (throttle > previousThrottle)) {
         altitudeIntegral += altitudeError;
-        throttleIterm = (volLimitationConfig()->throttleI * altitudeIntegral) / 100;
+        throttleIterm = (volLimitationConfig()->throttleI * altitudeIntegral) / 8000;
         throttleIterm = constrain(throttleIterm, -250, 250);
     } else {
         altitudeIntegral = 0;
@@ -151,9 +151,9 @@ float volLimitation_AltitudeLim(float throttle)
     previousAltitudeError = altitudeError;
 
     // PTerm calculation
-    throttlePterm = volLimitationConfig()->throttleP * altitudeError * 10;
+    throttlePterm = volLimitationConfig()->throttleP * altitudeError / 10;
 
-    int16_t altitudeAdjustment = (throttlePterm + throttleIterm  + throttleDterm) / ct / 20;
+    int16_t altitudeAdjustment = (throttlePterm + throttleIterm  + throttleDterm) / ct;
     int16_t hoverAdjustment = (volLimitationConfig()->throttleHover - 1000) / ct;
 
     volLimThrottle = constrainf(1000 + altitudeAdjustment + hoverAdjustment, volLimitationConfig()->throttleMin, volLimitationConfig()->throttleMax);
@@ -167,10 +167,6 @@ float volLimitation_AltitudeLim(float throttle)
         commandedLimThrottle = throttle;
     }
     previousThrottle = commandedLimThrottle;
-
-    DEBUG_SET(DEBUG_VOL_LIMITATION, 0, (int16_t)altitudeError);
-    DEBUG_SET(DEBUG_VOL_LIMITATION, 1, (int16_t)throttlePterm);
-    DEBUG_SET(DEBUG_VOL_LIMITATION, 2, (int16_t)throttleIterm);
     DEBUG_SET(DEBUG_VOL_LIMITATION, 3, (int16_t)volLimThrottle);
 
     return commandedLimThrottle;
@@ -178,14 +174,63 @@ float volLimitation_AltitudeLim(float throttle)
 
 float volLimitation_DistanceLimAngle(int axis, float angle_command)
 {
-    static uint8_t isStabModeSwitched = 0;
     static float previousDistance = 0;
     float volLimAngleD = 0, volLimAngleP, volLimAngle = 0;
     float volLimAngle_Pitch = 0, volLimAngle_Roll = 0;
 
     // Heading
-    int16_t headingError = (attitude.values.yaw - GPS_directionToHome);
+    int16_t headingError = (attitude.values.yaw - (GPS_directionToHome * 10));
     float distanceError = (float)volLimitationConfig()->maxDistance - (float)volLimData.sensor.distanceToHome; // in meter
+
+    // Pilot loose authority when approaching the limit
+    float pilotAuthorityFac = (distanceError + 20)/20;
+    pilotAuthorityFac = constrainf(pilotAuthorityFac,0,1);
+
+    // Distance over limit
+    if (volLimData.sensor.distanceToHome > volLimitationConfig()->maxDistance) {
+        // DTerm calculation
+        previousDistance = distanceError;
+        volLimAngleD = (float)volLimitationConfig()->distLimD * (distanceError - previousDistance) * getPidFrequency()*100;
+        volLimAngleD = constrainf(volLimAngleD,-10,10);
+
+        // PTerm caclulation
+        volLimAngleP = distanceError * (float)(volLimitationConfig()->distLimP) / 10;
+
+        volLimAngle = -1 * (volLimAngleP + volLimAngleD);
+        volLimAngle = constrainf(volLimAngle,-30,30);
+
+        volLimAngle_Pitch = volLimAngle * cos_approx(degreesToRadians(headingError/10));
+        volLimAngle_Roll = -1 * volLimAngle * sin_approx(degreesToRadians(headingError/10));
+    } else {
+        volLimAngle_Pitch = angle_command * pilotAuthorityFac;
+        volLimAngle_Roll = angle_command * pilotAuthorityFac;
+    }
+
+    if (axis == FD_ROLL) {
+        volLimData.angleDemand = volLimAngle_Roll;
+        volLimData.angleDemand += angle_command * pilotAuthorityFac; // Add pilot authority
+    } else if (axis == FD_PITCH) {
+        volLimData.angleDemand = volLimAngle_Pitch;
+        volLimData.angleDemand += angle_command * pilotAuthorityFac; // Add pilot authority
+    } else {
+        volLimData.angleDemand = angle_command;
+    }
+
+    DEBUG_SET(DEBUG_VOL_LIMITATION, 0, (int16_t)headingError);
+    DEBUG_SET(DEBUG_VOL_LIMITATION, 1, (int16_t)(volLimAngle_Pitch));
+    DEBUG_SET(DEBUG_VOL_LIMITATION, 2, (int16_t)(volLimAngle_Roll));
+
+    return volLimData.angleDemand;
+}
+
+uint8_t volLimitation_DistanceLimStatus(void)
+{
+    static uint8_t isStabModeSwitched = 0;
+    float distanceError = (float)volLimitationConfig()->maxDistance - (float)volLimData.sensor.distanceToHome; // in meter
+
+    if (IS_RC_MODE_ACTIVE(BOXANGLE)) {
+        isStabModeSwitched = 1;
+    }
 
     // Activate Stab mode and alert OSD if too far
     if(distanceError < 20) {
@@ -199,52 +244,6 @@ float volLimitation_DistanceLimAngle(int axis, float angle_command)
             volLimData.angleModeDemanded = 0;
         }
     }
-    if(IS_RC_MODE_ACTIVE(BOXANGLE)) {
-        isStabModeSwitched = 1;
-    }
-
-    // Pilot loose authority when approaching the limit
-    float pilotAuthorityFac = (distanceError + 10)/20;
-    pilotAuthorityFac = constrainf(pilotAuthorityFac,0,1);
-
-    // Distance over limit
-    if (volLimData.sensor.distanceToHome > volLimitationConfig()->maxDistance) {
-        // DTerm calculation
-        previousDistance = distanceError;
-        volLimAngleD = (float)volLimitationConfig()->distLimD * (distanceError - previousDistance) * getPidFrequency()/50;
-        volLimAngleD = constrainf(volLimAngleD,-10,10);
-
-        // PTerm caclulation
-        volLimAngleP = distanceError * (float)(volLimitationConfig()->distLimP) / 100;
-
-        volLimAngle = volLimAngleP + volLimAngleD;
-        volLimAngle += angle_command * pilotAuthorityFac; // Add pilot authority
-        volLimAngle = constrainf(volLimAngle,0,30);
-
-        volLimAngle_Pitch = volLimAngle * cos_approx(degreesToRadians(headingError));
-        volLimAngle_Roll = volLimAngle * sin_approx(degreesToRadians(headingError));
-    } else {
-        volLimAngle_Pitch = angle_command * pilotAuthorityFac;
-        volLimAngle_Roll = angle_command * pilotAuthorityFac;
-    }
-
-
-
-    if (axis == FD_ROLL) {
-        volLimData.angleDemand = volLimAngle_Roll;
-        volLimData.angleDemand = angle_command; // Shunt for testing
-    } else if (axis == FD_PITCH) {
-        volLimData.angleDemand = volLimAngle_Pitch;
-        volLimData.angleDemand = angle_command; // Shunt for testing
-    } else {
-        volLimData.angleDemand = angle_command;
-    }
-
-    return volLimData.angleDemand;
-}
-
-uint8_t volLimitation_DistanceLimStatus(void)
-{
     return volLimData.angleModeDemanded;
 }
 
