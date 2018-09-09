@@ -148,6 +148,7 @@ float volLimitation_AltitudeLim(float throttle)
     // DTerm calculation
     const int16_t altitudeDerivative = (altitudeError - previousAltitudeError) * getPidFrequency();
     throttleDterm = volLimitationConfig()->throttleD * altitudeDerivative * 20;
+    throttleDterm = 0; // deactivate DTerm
     previousAltitudeError = altitudeError;
 
     // PTerm calculation
@@ -191,7 +192,7 @@ float volLimitation_DistanceLimAngle(int axis, float angle_command)
         // DTerm calculation
         previousDistance = distanceError;
         volLimAngleD = (float)volLimitationConfig()->distLimD * (distanceError - previousDistance) * getPidFrequency()*100;
-        volLimAngleD = constrainf(volLimAngleD,-10,10);
+        volLimAngleD = 0;// = constrainf(volLimAngleD,-10,10);
 
         // PTerm caclulation
         volLimAngleP = distanceError * (float)(volLimitationConfig()->distLimP) / 10;
