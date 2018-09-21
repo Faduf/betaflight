@@ -739,11 +739,14 @@ static bool osdDrawSingleElement(uint8_t item)
 
 #ifdef USE_VOLUME_LIMITATION
             // Volume limitation warnings
-            if (getVolLimAlert().altitude == 1) {
-                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "TOO HIGH");
+            if (getVolLimAlert().autoBack == 1) {
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "RETOUR AUTO");
+                break;
+            } else if(getVolLimAlert().altitude == 1) {
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "DISTANCE MAX");
                 break;
             } else if(getVolLimAlert().distance == 1) {
-                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "TOO FAR");
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "ALTITUDE MAX");
                 break;
             }
 #endif

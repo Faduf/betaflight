@@ -54,13 +54,13 @@
 PG_REGISTER_WITH_RESET_TEMPLATE(volLimitationConfig_t, volLimitationConfig, PG_VOLUME_LIMITATION, 0);
 
 PG_RESET_TEMPLATE(volLimitationConfig_t, volLimitationConfig,
-    .maxAltitude = 50,
-    .maxDistance = 150,
-    .throttleP = 20,
-    .throttleI = 30,
-    .throttleD = 5,
+    .maxAltitude = 120,
+    .maxDistance = 1000,
+    .throttleP = 250,
+    .throttleI = 15,
+    .throttleD = 0,
     .distLimP = 10,
-    .distLimD = 10,
+    .distLimD = 0,
     .throttleMin = 1000,
     .throttleMax = 2000,
     .throttleHover = 1400,
@@ -189,6 +189,8 @@ float volLimitation_DistanceLimAngle(int axis, float angle_command)
 
     // Distance over limit
     if (volLimData.sensor.distanceToHome > volLimitationConfig()->maxDistance) {
+        // OSD Alert
+        volLimData.alert.autoBack = 1;
         // DTerm calculation
         previousDistance = distanceError;
         volLimAngleD = (float)volLimitationConfig()->distLimD * (distanceError - previousDistance) * getPidFrequency()*100;
@@ -198,11 +200,12 @@ float volLimitation_DistanceLimAngle(int axis, float angle_command)
         volLimAngleP = distanceError * (float)(volLimitationConfig()->distLimP) / 10;
 
         volLimAngle = -1 * (volLimAngleP + volLimAngleD);
-        volLimAngle = constrainf(volLimAngle,-30,30);
+        volLimAngle = constrainf(volLimAngle,-25,25);
 
         volLimAngle_Pitch = volLimAngle * cos_approx(degreesToRadians(headingError/10));
         volLimAngle_Roll = -1 * volLimAngle * sin_approx(degreesToRadians(headingError/10));
     } else {
+        volLimData.alert.autoBack = 0;
         volLimAngle_Pitch = angle_command * pilotAuthorityFac;
         volLimAngle_Roll = angle_command * pilotAuthorityFac;
     }

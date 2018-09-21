@@ -23,7 +23,8 @@ typedef enum {
     VOL_LIM_NO_LIM = 0,
     VOL_LIM_ALT_LIM = 1,
     VOL_LIM_DIST_LIM = 2,
-    VOL_LIM_BOTH = 3
+    VOL_LIM_DIST_AUTO = 3,
+    VOL_LIM_BOTH = 4
 } volLimitaionState_e;
 
 typedef struct volLimitation_s {
@@ -54,6 +55,7 @@ typedef struct {
 typedef struct {
     uint8_t altitude;
     uint8_t distance;
+    uint8_t autoBack;
 } volLimAlert_s;
 
 typedef struct {
