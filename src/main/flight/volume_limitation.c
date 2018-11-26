@@ -117,6 +117,7 @@ void volLimitation_SensorUpdate(void)
 
 float volLimitation_AltitudeLim(float throttle)
 {
+    int16_t secuOffsetAlt = 10;
     static float previousAltitudeError = 0;
     static float previousThrottle = 0;
     static int16_t altitudeIntegral = 0;
@@ -124,7 +125,7 @@ float volLimitation_AltitudeLim(float throttle)
     float ct = cos(DECIDEGREES_TO_RADIANS(attitude.values.pitch / 10))* cos(DECIDEGREES_TO_RADIANS(attitude.values.roll / 10));
     ct = constrainf(ct,0.5f,1.0f); // Inclination coefficient limitation
 
-    const int16_t altitudeError = volLimitationConfig()->maxAltitude - (getEstimatedAltitude() / 100); // Error in meters
+    const int16_t altitudeError = (volLimitationConfig()->maxAltitude - secuOffsetAlt) - (getEstimatedAltitude() / 100); // Error in meters
 
     // OSD and limitaiton activation if too High
     if (altitudeError < 10) {
@@ -175,13 +176,14 @@ float volLimitation_AltitudeLim(float throttle)
 
 float volLimitation_DistanceLimAngle(int axis, float angle_command)
 {
+    float secuOffsetGeo = 25;
     static float previousDistance = 0;
     float volLimAngleD = 0, volLimAngleP, volLimAngle = 0;
     float volLimAngle_Pitch = 0, volLimAngle_Roll = 0;
 
     // Heading
     int16_t headingError = (attitude.values.yaw - (GPS_directionToHome * 10));
-    float distanceError = (float)volLimitationConfig()->maxDistance - (float)volLimData.sensor.distanceToHome; // in meter
+    float distanceError = ((float)volLimitationConfig()->maxDistance - secuOffsetGeo) - (float)volLimData.sensor.distanceToHome; // in meter
 
     // Pilot loose authority when approaching the limit
     float pilotAuthorityFac = (distanceError + 20)/20;

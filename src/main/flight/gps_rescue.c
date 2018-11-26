@@ -59,7 +59,7 @@ PG_REGISTER_WITH_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig, PG_GPS_RESCU
 PG_RESET_TEMPLATE(gpsRescueConfig_t, gpsRescueConfig,
     .angle = 32,
     .initialAltitude = 50,
-    .descentDistance = 200,
+    .descentDistance = 10,
     .rescueGroundspeed = 2000,
     .throttleP = 150,
     .throttleI = 20,
@@ -124,7 +124,7 @@ void updateGPSRescueState(void)
         }
 
         // Minimum distance detection (100m).  Disarm regardless of sanity check configuration.  Rescue too close is never a good idea.
-        if (rescueState.sensor.distanceToHome < 100) {
+        if (rescueState.sensor.distanceToHome < 5) {
             // Never allow rescue mode to engage as a failsafe within 100 meters or when disarmed.
             if (rescueState.isFailsafe || !ARMING_FLAG(ARMED)) {
                 rescueState.failure = RESCUE_TOO_CLOSE;
@@ -151,8 +151,9 @@ void updateGPSRescueState(void)
         rescueState.intent.maxAngleDeg = 15;
         break;
     case RESCUE_CROSSTRACK:
-        if (rescueState.sensor.distanceToHome < gpsRescueConfig()->descentDistance) {
-            rescueState.phase = RESCUE_LANDING_APPROACH;
+
+        if (rescueState.sensor.distanceToHome < 10) {
+            rescueState.phase = RESCUE_LANDING;
         }
 
         // We can assume at this point that we are at or above our RTH height, so we need to try and point to home and tilt while maintaining alt
@@ -170,8 +171,8 @@ void updateGPSRescueState(void)
         }
 
         // Only allow new altitude and new speed to be equal or lower than the current values (to prevent parabolic movement on overshoot)
-        int32_t newAlt = gpsRescueConfig()->initialAltitude * 100  * rescueState.sensor.distanceToHome / gpsRescueConfig()->descentDistance;
-        int32_t newSpeed = gpsRescueConfig()->rescueGroundspeed * rescueState.sensor.distanceToHome / gpsRescueConfig()->descentDistance;
+        int32_t newAlt = gpsRescueConfig()->initialAltitude * 100;//  * rescueState.sensor.distanceToHome / gpsRescueConfig()->descentDistance;
+        int32_t newSpeed = gpsRescueConfig()->rescueGroundspeed;// * rescueState.sensor.distanceToHome / gpsRescueConfig()->descentDistance;
 
         rescueState.intent.targetAltitude = constrain(newAlt, 100, rescueState.intent.targetAltitude);
         rescueState.intent.targetGroundspeed = constrain(newSpeed, 100, rescueState.intent.targetGroundspeed);
@@ -184,7 +185,7 @@ void updateGPSRescueState(void)
         // At this point, do not let the target altitude go up anymore, so if we overshoot, we dont' move in a parabolic trajectory
 
         // If we are over 120% of average magnitude, just disarm since we're pretty much home
-        if (rescueState.sensor.accMagnitude > rescueState.sensor.accMagnitudeAvg * 1.5) {
+        if ((rescueState.sensor.accMagnitude > rescueState.sensor.accMagnitudeAvg * 1.5) && rescueState.sensor.currentAltitude <= 100) {
             setArmingDisabled(ARMING_DISABLED_ARM_SWITCH);
             disarm();
             rescueState.phase = RESCUE_COMPLETE;

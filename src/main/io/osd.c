@@ -743,10 +743,10 @@ static bool osdDrawSingleElement(uint8_t item)
                 osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "RETOUR AUTO");
                 break;
             } else if(getVolLimAlert().altitude == 1) {
-                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "DISTANCE MAX");
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "DIST_MAX");
                 break;
             } else if(getVolLimAlert().distance == 1) {
-                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "ALTITUDE MAX");
+                osdFormatMessage(buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "ALTI_MAX");
                 break;
             }
 #endif
