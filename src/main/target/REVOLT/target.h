@@ -21,7 +21,7 @@
 #pragma once
 
 
-#if defined(REVOLTOSD)
+#if defined(REVOLTOSD) || defined(REVOLTOSDI2C)
 #define TARGET_BOARD_IDENTIFIER "ROSD"
 #define USBD_PRODUCT_STRING     "RevoltOSD"
 #else
@@ -34,7 +34,7 @@
 
 
 
-#define LED0_PIN                PB5  
+#define LED0_PIN                PB5
 
 #define USE_BEEPER
 #define BEEPER_PIN              PB4
@@ -78,6 +78,21 @@
 #define I2C_DEVICE              (I2CDEV_1)
 #define I2C1_SCL                PB8
 #define I2C1_SDA                PB9
+#define I2C_DEVICE              (I2CDEV_1)
+
+#define BARO_I2C_INSTANCE       (I2CDEV_1)
+#define USE_BARO
+#define USE_BARO_BMP280
+#define USE_BARO_MS5611
+
+//*********** Magnetometer / Compass *************
+#define MAG_I2C_INSTANCE       (I2CDEV_1)
+#define USE_MAG
+#define USE_MAG_HMC5883
+#define MAG_HMC5883_ALIGN CW270_DEG_FLIP
+#define USE_MAG_QMC5883
+#define MAG_QMC5883_ALIGN CW270_DEG_FLIP
+#define USE_MAG_LIS3MDL
 
 /*----------Gyro Config--------*/
 #define USE_GYRO
@@ -100,7 +115,7 @@
 /*----------Flash Config--------*/
 #define FLASH_CS_PIN            PB3
 
-#if defined(REVOLTOSD)
+#if defined(REVOLTOSD) || defined(REVOLTOSDI2C)
 #define FLASH_SPI_INSTANCE      SPI2
 #else
 #define FLASH_SPI_INSTANCE      SPI3
@@ -110,7 +125,7 @@
 #define USE_FLASHFS
 #define USE_FLASH_M25P16
 
-#if defined(REVOLTOSD)
+#if defined(REVOLTOSD)  || defined(REVOLTOSDI2C)
 /*----------OSD Config--------*/
 #define USE_MAX7456
 #define MAX7456_SPI_INSTANCE    SPI2
