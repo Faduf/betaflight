@@ -47,6 +47,7 @@
 
 #include "sensors/acceleration.h"
 #include "sensors/compass.h"
+#include "sensors/barometer.h"
 
 #include "volume_limitation.h"
 
