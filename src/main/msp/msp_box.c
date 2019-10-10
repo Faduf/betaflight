@@ -197,12 +197,10 @@ void initActiveBoxIds(void)
             BME(BOXGPSRESCUE);
         }
 #endif
-#ifdef USE_VOLUME_LIMITATION
         if (!featureIsEnabled(FEATURE_3D)) {
             BME(BOXALTHOLD);
             BME(BOXSAFEHOLD);
         }
-#endif
         BME(BOXBEEPGPSCOUNT);
     }
 #endif

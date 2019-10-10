@@ -558,9 +558,7 @@ void gpsUpdate(timeUs_t currentTimeUs)
         updateGPSRescueState();
     }
 #endif
-#ifdef USE_VOLUME_LIMITATION
     volLimitation_SensorUpdate();
-#endif
 }
 
 static void gpsNewData(uint16_t c)
@@ -1407,9 +1405,7 @@ void onGpsNewData(void)
 #ifdef USE_GPS_RESCUE
     rescueNewGpsData();
 #endif
-#ifdef USE_VOLUME_LIMITATION
     volLimitation_NewGpsData();
-#endif
 }
 
 #endif

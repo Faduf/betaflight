@@ -1148,10 +1148,11 @@ static void osdElementWarnings(osdElementParms_t *element)
     }
 
 #endif // USE_GPS_RESCUE
-
-
-#ifdef USE_VOLUME_LIMITATION
     // Volume limitation OSD warnings
+    if (getVolLimAlert().distance == 2) {
+        osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "NO VOLUME LIMITATION");
+        return;
+    }
     if(getVolLimAlert().sensorFailure == 1) {
         osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "SENSOR FAILURE");
         return;
@@ -1165,7 +1166,6 @@ static void osdElementWarnings(osdElementParms_t *element)
         osdFormatMessage(element->buff, OSD_FORMAT_MESSAGE_BUFFER_SIZE, "SAFEHOLD MODE");
         return;
     }
-#endif
 
     // Show warning if in HEADFREE flight mode
     if (FLIGHT_MODE(HEADFREE_MODE)) {

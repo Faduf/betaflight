@@ -294,14 +294,12 @@ void updateArmingStatus(void)
         }
 #endif
 
-#ifdef USE_VOLUME_LIMITATION
-        // Arming is forbidden before GPS FIX
-        if ((STATE(GPS_FIX) || ARMING_FLAG(WAS_EVER_ARMED)) || !gpsNeededForVolLim()) {
+        // Arming is forbidden before GPS FIX and healthy sensors
+        if ((STATE(GPS_FIX) || ARMING_FLAG(WAS_EVER_ARMED)) || !gpsNeededForVolLim() || !volLimSanityCheck()) {
             unsetArmingDisabled(ARMING_DISABLED_GPS);
         } else {
             setArmingDisabled(ARMING_DISABLED_GPS);
         }
-#endif
 
 #ifdef USE_RPM_FILTER
         // USE_RPM_FILTER will only be defined if USE_DSHOT and USE_DSHOT_TELEMETRY are defined
@@ -886,7 +884,6 @@ bool processRx(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(HORIZON_MODE);
     }
 
-#ifdef USE_VOLUME_LIMITATION
     if (volLimitation_DistanceLimStatus() && sensors(SENSOR_ACC) && volLimSanityCheck()) {
         // bumpless transfer to Level mode
         canUseHorizonMode = false;
@@ -928,7 +925,6 @@ bool processRx(timeUs_t currentTimeUs)
         DISABLE_FLIGHT_MODE(SAFE_HOLD_MODE);
         DISABLE_FLIGHT_MODE(ALTHOLD_MODE);
     }
-#endif
 
 #ifdef USE_GPS_RESCUE
     if (ARMING_FLAG(ARMED) && (IS_RC_MODE_ACTIVE(BOXGPSRESCUE) || (failsafeIsActive() && failsafeConfig()->failsafe_procedure == FAILSAFE_PROCEDURE_GPS_RESCUE))) {
