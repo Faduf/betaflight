@@ -164,7 +164,7 @@ float volLimitation_AltitudeLim(float throttle)
 
     if (!volLimitationConfig()->altitudeLimitation) {
         volLimData.alert.distance = 2;
-        return 0;
+        return throttle;
     }
 
     const int32_t altitudeErrorLim = (volLimitationConfig()->maxAltitude * 100) - volLimData.sensor.currentAltitude; // Error in cm
