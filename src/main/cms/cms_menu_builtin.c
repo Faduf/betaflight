@@ -45,6 +45,7 @@
 #include "cms/cms_menu_misc.h"
 #include "cms/cms_menu_power.h"
 #include "cms/cms_menu_failsafe.h"
+#include "cms/cms_menu_geofence.h"
 
 // VTX supplied menus
 
@@ -125,6 +126,8 @@ static const OSD_Entry menuFeaturesEntries[] =
 #ifdef USE_CMS_FAILSAFE_MENU
     {"FAILSAFE", OME_Submenu, cmsMenuChange, &cmsx_menuFailsafe, 0},
 #endif
+// GEOFENCING SETUP MENU
+    {"GEOFENCING", OME_Submenu, cmsMenuChange, &cmsx_menuGeofence, 0},
     {"BACK", OME_Back, NULL, NULL, 0},
     {NULL, OME_END, NULL, NULL, 0}
 };
