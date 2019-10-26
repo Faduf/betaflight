@@ -936,7 +936,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
 #endif
     loggingThrottle = throttle;
 
-#if defined(USE_VOLUME_LIMITATION) && defined(USE_GPS)
     // Altitude limitation
     throttle = volLimitation_AltitudeLim(throttle);
     /************ ALTHOLD MODE activation ***************/
@@ -946,7 +945,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs, uint8_t vbatPidCompensa
         volLimitation_AltitudeHold(0);
     }
     /****************************************************/
-#endif
 
     motorMixRange = motorMixMax - motorMixMin;
     if (motorMixRange > 1.0f) {
